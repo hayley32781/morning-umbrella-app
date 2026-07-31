@@ -54,6 +54,44 @@
     </div>
   </div>
   <script>
+    const THRESHOLD_PERCENT = 40;
+    const WINDOW_START_HOUR = 6;
+    const WINDOW_END_HOUR = 21;
+
+    function getTodayWindowPrecipProbabilities(hourlyTimes, hourlyPrecipProb, startHour = WINDOW_START_HOUR, endHour = WINDOW_END_HOUR) {
+      const todayStr = hourlyTimes[0].slice(0, 10);
+      const result = [];
+      for (let i = 0; i < hourlyTimes.length; i++) {
+        const [datePart, timePart] = hourlyTimes[i].split('T');
+        const hour = parseInt(timePart.slice(0, 2), 10);
+        if (datePart === todayStr && hour >= startHour && hour <= endHour) {
+          result.push(hourlyPrecipProb[i]);
+        }
+      }
+      return result;
+    }
+
+    function needsUmbrella(precipProbs, threshold = THRESHOLD_PERCENT) {
+      if (precipProbs.length === 0) return false;
+      return Math.max(...precipProbs) >= threshold;
+    }
+
+    function getCurrentWeatherCode(hourlyTimes, hourlyWeatherCode) {
+      const now = new Date();
+      const pad = (n) => String(n).padStart(2, '0');
+      const nowHourStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:00`;
+      let idx = hourlyTimes.indexOf(nowHourStr);
+      if (idx === -1) idx = 0;
+      return hourlyWeatherCode[idx];
+    }
+
+    function weatherCodeToCategory(code) {
+      if (code === 0 || code === 1) return 'sunny';
+      if ([2, 3, 45, 48].includes(code)) return 'cloudy';
+      if ([71, 73, 75, 77, 85, 86].includes(code)) return 'snowy';
+      return 'rainy';
+    }
+
     function getUserLocation() {
       return new Promise((resolve, reject) => {
         if (!navigator.geolocation) {
