@@ -42,7 +42,7 @@
   #scene-snowy { background: linear-gradient(180deg, #dceaf5, #f3f8fc); }
 
   .sun-face {
-    position: absolute; top: 24px; left: 50%;
+    position: absolute; top: 90px; left: 50%;
     width: 50px; height: 50px; margin-left: -25px;
     border-radius: 50%; background: #ffb84d;
     animation: bounceSoft 2.2s ease-in-out infinite;
@@ -63,7 +63,7 @@
   @keyframes driftAcross { from { transform: translateX(-60px); } to { transform: translateX(340px); } }
 
   .cloud-char {
-    position: absolute; top: 60px; left: 50%;
+    position: absolute; top: 126px; left: 50%;
     width: 64px; height: 32px; margin-left: -32px;
     background: #fff; border-radius: 30px;
     z-index: 2;
@@ -82,7 +82,7 @@
   @keyframes cloudSway { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 
   .raindrop {
-    position: absolute; top: 56px;
+    position: absolute; top: 122px;
     width: 2px; height: 14px;
     background: #6b93c7;
     z-index: 1;
@@ -96,7 +96,7 @@
   }
 
   .snowflake {
-    position: absolute; top: 56px;
+    position: absolute; top: 122px;
     width: 8px; height: 8px; font-size: 10px; color: #fff; text-align: center;
     z-index: 1;
     animation: snowFall 4s linear infinite;
@@ -167,8 +167,8 @@
     <div class="app-card">
       <div class="bg-layer">
         <div class="scene active" id="scene-sunny">
-          <div class="puff-cloud" style="top:14px; animation-delay:0s"></div>
-          <div class="puff-cloud" style="top:50px; opacity:0.5; transform:scale(0.7); animation-delay:-4s"></div>
+          <div class="puff-cloud" style="top:80px; animation-delay:0s"></div>
+          <div class="puff-cloud" style="top:116px; opacity:0.5; transform:scale(0.7); animation-delay:-4s"></div>
           <div class="sun-face"></div>
         </div>
         <div class="scene" id="scene-cloudy">
