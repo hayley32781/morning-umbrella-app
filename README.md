@@ -16,4 +16,4 @@
 
 ## 배포
 
-GitHub Pages로 배포되어 있습니다: (Task 7에서 URL 추가 예정)
+GitHub Pages로 배포되어 있습니다: https://hayley32781.github.io/morning-umbrella-app/
