@@ -68,6 +68,22 @@
       });
     }
 
+    async function fetchWeather(lat, lon) {
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=precipitation_probability,weathercode&daily=temperature_2m_max,temperature_2m_min&timezone=auto`;
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error('날씨 정보를 가져올 수 없어요');
+      }
+      const data = await response.json();
+      return {
+        hourlyTimes: data.hourly.time,
+        hourlyPrecipProb: data.hourly.precipitation_probability,
+        hourlyWeatherCode: data.hourly.weathercode,
+        todayMax: data.daily.temperature_2m_max[0],
+        todayMin: data.daily.temperature_2m_min[0],
+      };
+    }
+
     function renderError(message) {
       document.getElementById('icon').textContent = '⚠️';
       document.getElementById('result').textContent = '';
@@ -83,8 +99,10 @@
       document.getElementById('detail').textContent = '';
       try {
         const { lat, lon } = await getUserLocation();
-        // 임시: 다음 작업에서 fetchWeather로 교체된다
-        document.getElementById('result').textContent = `위치 확인됨: ${lat.toFixed(2)}, ${lon.toFixed(2)}`;
+        const weather = await fetchWeather(lat, lon);
+        // 임시: 다음 작업에서 판단 로직 결과로 교체된다
+        document.getElementById('result').textContent =
+          `오늘 최고 ${weather.todayMax}° / 최저 ${weather.todayMin}°`;
       } catch (err) {
         renderError(err.message || '문제가 발생했어요. 잠시 후 다시 시도해주세요.');
       }
