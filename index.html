@@ -108,7 +108,12 @@
 
     async function fetchWeather(lat, lon) {
       const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=precipitation_probability,weathercode&daily=temperature_2m_max,temperature_2m_min&timezone=auto`;
-      const response = await fetch(url);
+      let response;
+      try {
+        response = await fetch(url);
+      } catch (e) {
+        throw new Error('날씨 정보를 가져올 수 없어요. 잠시 후 다시 시도해주세요.');
+      }
       if (!response.ok) {
         throw new Error('날씨 정보를 가져올 수 없어요');
       }
@@ -164,7 +169,8 @@
         const category = weatherCodeToCategory(code);
         renderResult({ umbrella, max: weather.todayMax, min: weather.todayMin, maxPrecipProb, category });
       } catch (err) {
-        renderError(err.message || '문제가 발생했어요. 잠시 후 다시 시도해주세요.');
+        const known = err instanceof Error && /[가-힣]/.test(err.message || '');
+        renderError(known ? err.message : '문제가 발생했어요. 잠시 후 다시 시도해주세요.');
       }
     }
 
