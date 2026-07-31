@@ -224,6 +224,35 @@
       return Math.max(...uvValues) >= threshold;
     }
 
+    const COMMENTS = {
+      sunny: '나들이하기 좋은 날씨예요',
+      cloudy: '선선하게 흐린 하루예요',
+      rainy: '우산 깜빡하지 마세요!',
+      snowy: '눈길 조심하세요',
+    };
+
+    function getOneLineComment(category) {
+      return COMMENTS[category] || '';
+    }
+
+    const TIMELINE_HOURS = [6, 9, 12, 15, 18, 21];
+    const CATEGORY_EMOJI = { sunny: '☀️', cloudy: '⛅', rainy: '🌧️', snowy: '❄️' };
+
+    function buildTimeline(hourlyTimes, hourlyWeatherCode, hours = TIMELINE_HOURS) {
+      const todayStr = hourlyTimes[0].slice(0, 10);
+      return hours.map((h) => {
+        const pad = String(h).padStart(2, '0');
+        const target = `${todayStr}T${pad}:00`;
+        const idx = hourlyTimes.indexOf(target);
+        if (idx === -1) return '–';
+        return CATEGORY_EMOJI[weatherCodeToCategory(hourlyWeatherCode[idx])];
+      });
+    }
+
+    function renderTimeline(hourlyTimes, hourlyWeatherCode) {
+      document.getElementById('timeline').textContent = buildTimeline(hourlyTimes, hourlyWeatherCode).join(' ');
+    }
+
     function getCurrentHourIndex(hourlyTimes) {
       const now = new Date();
       const pad = (n) => String(n).padStart(2, '0');
@@ -287,10 +316,13 @@
       const maxPrecipProb = precipProbs.length ? Math.max(...precipProbs) : 0;
       const code = getCurrentWeatherCode(weather.hourlyTimes, weather.hourlyWeatherCode);
       const category = weatherCodeToCategory(code);
+      const idx = getCurrentHourIndex(weather.hourlyTimes);
       return {
         icon: umbrella ? '☂️' : '☀️',
         label: umbrella ? '우산 챙기세요' : '우산 필요없어요',
         detail: `오늘 ${Math.round(weather.todayMin)}° / ${Math.round(weather.todayMax)}°, 강수확률 최대 ${Math.round(maxPrecipProb)}%`,
+        humidityWind: `습도 ${Math.round(weather.hourlyHumidity[idx])}% · 바람 ${weather.hourlyWind[idx].toFixed(1)}m/s`,
+        comment: getOneLineComment(category),
         category,
       };
     }
@@ -300,10 +332,13 @@
       const parasol = needsParasol(uvValues);
       const maxUv = uvValues.length ? Math.max(...uvValues) : 0;
       const category = parasol ? 'sunny' : 'cloudy';
+      const idx = getCurrentHourIndex(weather.hourlyTimes);
       return {
         icon: parasol ? '🌂' : '⛅',
         label: parasol ? '양산 챙기세요' : '양산 필요없어요',
         detail: `오늘 ${Math.round(weather.todayMin)}° / ${Math.round(weather.todayMax)}°, UV 지수 최대 ${maxUv.toFixed(1)}`,
+        humidityWind: `습도 ${Math.round(weather.hourlyHumidity[idx])}% · 바람 ${weather.hourlyWind[idx].toFixed(1)}m/s`,
+        comment: getOneLineComment(category),
         category,
       };
     }
@@ -313,6 +348,8 @@
       document.getElementById('icon').textContent = view.icon;
       document.getElementById('result').textContent = view.label;
       document.getElementById('detail').textContent = view.detail;
+      document.getElementById('humidity-wind').textContent = view.humidityWind;
+      document.getElementById('comment').textContent = view.comment;
       showScene(view.category);
     }
 
@@ -322,6 +359,7 @@
       document.getElementById('detail').textContent = '';
       document.getElementById('humidity-wind').textContent = '';
       document.getElementById('comment').textContent = '';
+      document.getElementById('timeline').textContent = '';
       document.getElementById('error-message').textContent = message;
       document.getElementById('error').style.display = 'block';
     }
@@ -345,6 +383,7 @@
       document.getElementById('detail').textContent = '';
       document.getElementById('humidity-wind').textContent = '';
       document.getElementById('comment').textContent = '';
+      document.getElementById('timeline').textContent = '';
       try {
         const { lat, lon } = await getUserLocation();
         const weather = await fetchWeather(lat, lon);
@@ -352,6 +391,7 @@
           umbrella: computeUmbrellaView(weather),
           parasol: computeParasolView(weather),
         };
+        renderTimeline(weather.hourlyTimes, weather.hourlyWeatherCode);
         renderView(activeTab === 'umbrella' ? currentView.umbrella : currentView.parasol);
       } catch (err) {
         const known = err instanceof Error && /[가-힣]/.test(err.message || '');
