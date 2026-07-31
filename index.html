@@ -23,6 +23,9 @@
     position: relative;
     width: 380px;
     max-width: 92vw;
+    min-height: 520px;
+    display: flex;
+    flex-direction: column;
     border-radius: 24px;
     overflow: hidden;
     box-shadow: 0 12px 32px rgba(0,0,0,0.15);
@@ -109,6 +112,10 @@
   /* 텍스트 콘텐츠 레이어 */
   .content-layer {
     position: relative; z-index: 3;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
     padding: 1.5rem 1.5rem 0.5rem;
     text-align: center;
   }
@@ -272,6 +279,13 @@
       return 'rainy';
     }
 
+    function reconcileCategory(actualCategory, precipitationNeeded) {
+      const isPrecipCategory = actualCategory === 'rainy' || actualCategory === 'snowy';
+      if (precipitationNeeded && !isPrecipCategory) return 'rainy';
+      if (!precipitationNeeded && isPrecipCategory) return 'cloudy';
+      return actualCategory;
+    }
+
     function getUserLocation() {
       return new Promise((resolve, reject) => {
         if (!navigator.geolocation) {
@@ -287,7 +301,7 @@
     }
 
     async function fetchWeather(lat, lon) {
-      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=precipitation_probability,weathercode,uv_index,relative_humidity_2m,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min&timezone=auto`;
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=precipitation_probability,weathercode,uv_index,relative_humidity_2m,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min&timezone=auto&wind_speed_unit=ms`;
       let response;
       try {
         response = await fetch(url);
@@ -315,7 +329,8 @@
       const umbrella = needsUmbrella(precipProbs);
       const maxPrecipProb = precipProbs.length ? Math.max(...precipProbs) : 0;
       const code = getCurrentWeatherCode(weather.hourlyTimes, weather.hourlyWeatherCode);
-      const category = weatherCodeToCategory(code);
+      const actualCategory = weatherCodeToCategory(code);
+      const category = reconcileCategory(actualCategory, umbrella);
       const idx = getCurrentHourIndex(weather.hourlyTimes);
       return {
         icon: umbrella ? '☂️' : '☀️',
@@ -384,6 +399,7 @@
       document.getElementById('humidity-wind').textContent = '';
       document.getElementById('comment').textContent = '';
       document.getElementById('timeline').textContent = '';
+      currentView = null;
       try {
         const { lat, lon } = await getUserLocation();
         const weather = await fetchWeather(lat, lon);
