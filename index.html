@@ -217,6 +217,13 @@
       return Math.max(...precipProbs) >= threshold;
     }
 
+    const UV_THRESHOLD = 6;
+
+    function needsParasol(uvValues, threshold = UV_THRESHOLD) {
+      if (uvValues.length === 0) return false;
+      return Math.max(...uvValues) >= threshold;
+    }
+
     function getCurrentHourIndex(hourlyTimes) {
       const now = new Date();
       const pad = (n) => String(n).padStart(2, '0');
@@ -274,22 +281,39 @@
       };
     }
 
-    function renderResult({ umbrella, max, min, maxPrecipProb, category }) {
+    function computeUmbrellaView(weather) {
+      const precipProbs = getTodayWindowValues(weather.hourlyTimes, weather.hourlyPrecipProb);
+      const umbrella = needsUmbrella(precipProbs);
+      const maxPrecipProb = precipProbs.length ? Math.max(...precipProbs) : 0;
+      const code = getCurrentWeatherCode(weather.hourlyTimes, weather.hourlyWeatherCode);
+      const category = weatherCodeToCategory(code);
+      return {
+        icon: umbrella ? '☂️' : '☀️',
+        label: umbrella ? '우산 챙기세요' : '우산 필요없어요',
+        detail: `오늘 ${Math.round(weather.todayMin)}° / ${Math.round(weather.todayMax)}°, 강수확률 최대 ${Math.round(maxPrecipProb)}%`,
+        category,
+      };
+    }
+
+    function computeParasolView(weather) {
+      const uvValues = getTodayWindowValues(weather.hourlyTimes, weather.hourlyUv);
+      const parasol = needsParasol(uvValues);
+      const maxUv = uvValues.length ? Math.max(...uvValues) : 0;
+      const category = parasol ? 'sunny' : 'cloudy';
+      return {
+        icon: parasol ? '🌂' : '⛅',
+        label: parasol ? '양산 챙기세요' : '양산 필요없어요',
+        detail: `오늘 ${Math.round(weather.todayMin)}° / ${Math.round(weather.todayMax)}°, UV 지수 최대 ${maxUv.toFixed(1)}`,
+        category,
+      };
+    }
+
+    function renderView(view) {
       document.getElementById('error').style.display = 'none';
-      const iconEl = document.getElementById('icon');
-      const resultEl = document.getElementById('result');
-      const detailEl = document.getElementById('detail');
-
-      if (umbrella) {
-        iconEl.textContent = '☂️';
-        resultEl.textContent = '우산 챙기세요';
-      } else {
-        iconEl.textContent = '☀️';
-        resultEl.textContent = '우산 필요없어요';
-      }
-      detailEl.textContent = `오늘 ${Math.round(min)}° / ${Math.round(max)}°, 강수확률 최대 ${Math.round(maxPrecipProb)}%`;
-
-      showScene(category);
+      document.getElementById('icon').textContent = view.icon;
+      document.getElementById('result').textContent = view.label;
+      document.getElementById('detail').textContent = view.detail;
+      showScene(view.category);
     }
 
     function renderError(message) {
@@ -302,6 +326,18 @@
       document.getElementById('error').style.display = 'block';
     }
 
+    let activeTab = 'umbrella';
+    let currentView = null;
+
+    function setActiveTab(tab) {
+      activeTab = tab;
+      document.getElementById('tab-umbrella').classList.toggle('active', tab === 'umbrella');
+      document.getElementById('tab-parasol').classList.toggle('active', tab === 'parasol');
+      if (currentView) {
+        renderView(tab === 'umbrella' ? currentView.umbrella : currentView.parasol);
+      }
+    }
+
     async function init() {
       document.getElementById('error').style.display = 'none';
       document.getElementById('icon').textContent = '⏳';
@@ -312,12 +348,11 @@
       try {
         const { lat, lon } = await getUserLocation();
         const weather = await fetchWeather(lat, lon);
-        const precipProbs = getTodayWindowValues(weather.hourlyTimes, weather.hourlyPrecipProb);
-        const umbrella = needsUmbrella(precipProbs);
-        const maxPrecipProb = precipProbs.length ? Math.max(...precipProbs) : 0;
-        const code = getCurrentWeatherCode(weather.hourlyTimes, weather.hourlyWeatherCode);
-        const category = weatherCodeToCategory(code);
-        renderResult({ umbrella, max: weather.todayMax, min: weather.todayMin, maxPrecipProb, category });
+        currentView = {
+          umbrella: computeUmbrellaView(weather),
+          parasol: computeParasolView(weather),
+        };
+        renderView(activeTab === 'umbrella' ? currentView.umbrella : currentView.parasol);
       } catch (err) {
         const known = err instanceof Error && /[가-힣]/.test(err.message || '');
         renderError(known ? err.message : '문제가 발생했어요. 잠시 후 다시 시도해주세요.');
@@ -325,6 +360,8 @@
     }
 
     document.getElementById('retry-btn').addEventListener('click', init);
+    document.getElementById('tab-umbrella').addEventListener('click', () => setActiveTab('umbrella'));
+    document.getElementById('tab-parasol').addEventListener('click', () => setActiveTab('parasol'));
     window.addEventListener('load', init);
   </script>
 </body>
