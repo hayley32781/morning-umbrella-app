@@ -21,9 +21,9 @@
   }
   .app-card {
     position: relative;
-    width: 380px;
+    width: 360px;
     max-width: 92vw;
-    min-height: 520px;
+    min-height: 640px;
     display: flex;
     flex-direction: column;
     border-radius: 24px;
@@ -109,6 +109,22 @@
     to { transform: translate(-6px, 220px) rotate(360deg); opacity: 0; }
   }
 
+  /* 탭 바 — 배경 애니메이션 위에 떠 있는 헤더 */
+  .tabs-bar {
+    position: relative; z-index: 3;
+    display: flex; gap: 0.5rem;
+    padding: 1.25rem 1.25rem 0;
+  }
+  .tab {
+    flex: 1;
+    padding: 0.5rem 0;
+    border: none; border-radius: 10px;
+    background: rgba(255,255,255,0.7);
+    font-size: 0.9rem; cursor: pointer; color: #333;
+    backdrop-filter: blur(2px);
+  }
+  .tab.active { background: #333; color: #fff; font-weight: 600; }
+
   /* 텍스트 콘텐츠 레이어 */
   .content-layer {
     position: relative; z-index: 3;
@@ -116,18 +132,9 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding: 1.5rem 1.5rem 0.5rem;
+    padding: 0.5rem 1.5rem;
     text-align: center;
   }
-  .tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
-  .tab {
-    flex: 1;
-    padding: 0.5rem 0;
-    border: none; border-radius: 10px;
-    background: rgba(255,255,255,0.6);
-    font-size: 0.9rem; cursor: pointer; color: #333;
-  }
-  .tab.active { background: #333; color: #fff; font-weight: 600; }
   #icon { font-size: 5rem; }
   #result { font-size: 2rem; font-weight: 700; margin: 0.5rem 0; }
   #detail { font-size: 1.1rem; color: #333; }
@@ -141,9 +148,18 @@
 
   .timeline {
     position: relative; z-index: 3;
-    text-align: center; font-size: 1.1rem; letter-spacing: 0.3rem;
-    padding: 0.75rem 0 1.25rem;
+    display: flex;
+    justify-content: space-around;
+    padding: 0.75rem 1rem 1.25rem;
   }
+  .timeline-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: #444;
+  }
+  .timeline-emoji { font-size: 1.1rem; }
+  .timeline-hour { font-size: 0.65rem; margin-top: 2px; }
 </style>
 </head>
 <body>
@@ -176,11 +192,11 @@
           <div class="cloud-char"><div class="eye l"></div><div class="eye r"></div></div>
         </div>
       </div>
+      <div class="tabs-bar">
+        <button id="tab-umbrella" class="tab active" type="button">☂️ 우산</button>
+        <button id="tab-parasol" class="tab" type="button">🌂 양산</button>
+      </div>
       <div class="content-layer">
-        <div class="tabs">
-          <button id="tab-umbrella" class="tab active" type="button">☂️ 우산</button>
-          <button id="tab-parasol" class="tab" type="button">🌂 양산</button>
-        </div>
         <div id="icon">⏳</div>
         <div id="result">날씨 확인 중...</div>
         <div id="detail"></div>
@@ -257,7 +273,25 @@
     }
 
     function renderTimeline(hourlyTimes, hourlyWeatherCode) {
-      document.getElementById('timeline').textContent = buildTimeline(hourlyTimes, hourlyWeatherCode).join(' ');
+      const emojis = buildTimeline(hourlyTimes, hourlyWeatherCode);
+      const timelineEl = document.getElementById('timeline');
+      timelineEl.textContent = '';
+      TIMELINE_HOURS.forEach((hour, i) => {
+        const item = document.createElement('div');
+        item.className = 'timeline-item';
+
+        const emojiEl = document.createElement('div');
+        emojiEl.className = 'timeline-emoji';
+        emojiEl.textContent = emojis[i];
+
+        const hourEl = document.createElement('div');
+        hourEl.className = 'timeline-hour';
+        hourEl.textContent = String(hour).padStart(2, '0');
+
+        item.appendChild(emojiEl);
+        item.appendChild(hourEl);
+        timelineEl.appendChild(item);
+      });
     }
 
     function getCurrentHourIndex(hourlyTimes) {
