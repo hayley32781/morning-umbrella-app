@@ -199,7 +199,7 @@
       });
     }
 
-    function getTodayWindowPrecipProbabilities(hourlyTimes, hourlyPrecipProb, startHour = WINDOW_START_HOUR, endHour = WINDOW_END_HOUR) {
+    function getTodayWindowValues(hourlyTimes, hourlyPrecipProb, startHour = WINDOW_START_HOUR, endHour = WINDOW_END_HOUR) {
       const todayStr = hourlyTimes[0].slice(0, 10);
       const result = [];
       for (let i = 0; i < hourlyTimes.length; i++) {
@@ -217,13 +217,16 @@
       return Math.max(...precipProbs) >= threshold;
     }
 
-    function getCurrentWeatherCode(hourlyTimes, hourlyWeatherCode) {
+    function getCurrentHourIndex(hourlyTimes) {
       const now = new Date();
       const pad = (n) => String(n).padStart(2, '0');
       const nowHourStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:00`;
-      let idx = hourlyTimes.indexOf(nowHourStr);
-      if (idx === -1) idx = 0;
-      return hourlyWeatherCode[idx];
+      const idx = hourlyTimes.indexOf(nowHourStr);
+      return idx === -1 ? 0 : idx;
+    }
+
+    function getCurrentWeatherCode(hourlyTimes, hourlyWeatherCode) {
+      return hourlyWeatherCode[getCurrentHourIndex(hourlyTimes)];
     }
 
     function weatherCodeToCategory(code) {
@@ -248,7 +251,7 @@
     }
 
     async function fetchWeather(lat, lon) {
-      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=precipitation_probability,weathercode&daily=temperature_2m_max,temperature_2m_min&timezone=auto`;
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=precipitation_probability,weathercode,uv_index,relative_humidity_2m,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min&timezone=auto`;
       let response;
       try {
         response = await fetch(url);
@@ -263,6 +266,9 @@
         hourlyTimes: data.hourly.time,
         hourlyPrecipProb: data.hourly.precipitation_probability,
         hourlyWeatherCode: data.hourly.weathercode,
+        hourlyUv: data.hourly.uv_index,
+        hourlyHumidity: data.hourly.relative_humidity_2m,
+        hourlyWind: data.hourly.wind_speed_10m,
         todayMax: data.daily.temperature_2m_max[0],
         todayMin: data.daily.temperature_2m_min[0],
       };
@@ -306,7 +312,7 @@
       try {
         const { lat, lon } = await getUserLocation();
         const weather = await fetchWeather(lat, lon);
-        const precipProbs = getTodayWindowPrecipProbabilities(weather.hourlyTimes, weather.hourlyPrecipProb);
+        const precipProbs = getTodayWindowValues(weather.hourlyTimes, weather.hourlyPrecipProb);
         const umbrella = needsUmbrella(precipProbs);
         const maxPrecipProb = precipProbs.length ? Math.max(...precipProbs) : 0;
         const code = getCurrentWeatherCode(weather.hourlyTimes, weather.hourlyWeatherCode);
