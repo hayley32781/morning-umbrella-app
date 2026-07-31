@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>아침 우산 알리미</title>
+<style>
+  :root {
+    --bg-sunny: #fdf6e3;
+    --bg-cloudy: #e9edf1;
+    --bg-rainy: #cfd8e3;
+    --bg-snowy: #eef3f7;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    background: var(--bg-cloudy);
+    transition: background-color 0.4s ease;
+  }
+  body.sunny { background: var(--bg-sunny); }
+  body.cloudy { background: var(--bg-cloudy); }
+  body.rainy { background: var(--bg-rainy); }
+  body.snowy { background: var(--bg-snowy); }
+  .card { text-align: center; padding: 2rem; }
+  #icon { font-size: 5rem; }
+  #result { font-size: 2rem; font-weight: 700; margin: 0.5rem 0; }
+  #detail { font-size: 1.1rem; color: #444; }
+  #error { display: none; font-size: 1.2rem; margin-top: 1rem; }
+  #retry-btn {
+    margin-top: 1rem;
+    padding: 0.6rem 1.2rem;
+    font-size: 1rem;
+    border: none;
+    border-radius: 8px;
+    background: #333;
+    color: white;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body class="cloudy">
+  <div class="card">
+    <div id="icon">⏳</div>
+    <div id="result">날씨 확인 중...</div>
+    <div id="detail"></div>
+    <div id="error">
+      <p id="error-message"></p>
+      <button id="retry-btn">다시 시도</button>
+    </div>
+  </div>
+  <script>
+    // 이후 작업에서 여기에 로직을 추가한다
+  </script>
+</body>
+</html>
