@@ -122,6 +122,25 @@
       };
     }
 
+    function renderResult({ umbrella, max, min, maxPrecipProb, category }) {
+      document.getElementById('error').style.display = 'none';
+      const iconEl = document.getElementById('icon');
+      const resultEl = document.getElementById('result');
+      const detailEl = document.getElementById('detail');
+
+      if (umbrella) {
+        iconEl.textContent = '☂️';
+        resultEl.textContent = '우산 챙기세요';
+      } else {
+        iconEl.textContent = '☀️';
+        resultEl.textContent = '우산 필요없어요';
+      }
+      detailEl.textContent = `오늘 ${Math.round(min)}° / ${Math.round(max)}°, 강수확률 최대 ${Math.round(maxPrecipProb)}%`;
+
+      document.body.classList.remove('sunny', 'cloudy', 'rainy', 'snowy');
+      document.body.classList.add(category);
+    }
+
     function renderError(message) {
       document.getElementById('icon').textContent = '⚠️';
       document.getElementById('result').textContent = '';
@@ -138,9 +157,12 @@
       try {
         const { lat, lon } = await getUserLocation();
         const weather = await fetchWeather(lat, lon);
-        // 임시: 다음 작업에서 판단 로직 결과로 교체된다
-        document.getElementById('result').textContent =
-          `오늘 최고 ${weather.todayMax}° / 최저 ${weather.todayMin}°`;
+        const precipProbs = getTodayWindowPrecipProbabilities(weather.hourlyTimes, weather.hourlyPrecipProb);
+        const umbrella = needsUmbrella(precipProbs);
+        const maxPrecipProb = precipProbs.length ? Math.max(...precipProbs) : 0;
+        const code = getCurrentWeatherCode(weather.hourlyTimes, weather.hourlyWeatherCode);
+        const category = weatherCodeToCategory(code);
+        renderResult({ umbrella, max: weather.todayMax, min: weather.todayMin, maxPrecipProb, category });
       } catch (err) {
         renderError(err.message || '문제가 발생했어요. 잠시 후 다시 시도해주세요.');
       }
