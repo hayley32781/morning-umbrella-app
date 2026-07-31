@@ -5,58 +5,199 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>아침 우산 알리미</title>
 <style>
-  :root {
-    --bg-sunny: #fdf6e3;
-    --bg-cloudy: #e9edf1;
-    --bg-rainy: #cfd8e3;
-    --bg-snowy: #eef3f7;
-  }
   * { box-sizing: border-box; }
   body {
     margin: 0;
     min-height: 100vh;
+    font-family: -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  }
+  .page {
+    min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
-    background: var(--bg-cloudy);
-    transition: background-color 0.4s ease;
+    background: #f0f1f3;
+    padding: 1.5rem;
   }
-  body.sunny { background: var(--bg-sunny); }
-  body.cloudy { background: var(--bg-cloudy); }
-  body.rainy { background: var(--bg-rainy); }
-  body.snowy { background: var(--bg-snowy); }
-  .card { text-align: center; padding: 2rem; }
+  .app-card {
+    position: relative;
+    width: 380px;
+    max-width: 92vw;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.15);
+    background: #e9edf1;
+  }
+
+  /* 배경 애니메이션 레이어 */
+  .bg-layer { position: absolute; inset: 0; z-index: 1; overflow: hidden; }
+  .scene { position: absolute; inset: 0; display: none; }
+  .scene.active { display: block; }
+  #scene-sunny { background: linear-gradient(180deg, #fff3d6, #ffe3b0); }
+  #scene-cloudy { background: linear-gradient(180deg, #d9dee3, #eef1f4); }
+  #scene-rainy { background: linear-gradient(180deg, #cfd8e3, #e9edf1); }
+  #scene-snowy { background: linear-gradient(180deg, #dceaf5, #f3f8fc); }
+
+  .sun-face {
+    position: absolute; top: 24px; left: 50%;
+    width: 50px; height: 50px; margin-left: -25px;
+    border-radius: 50%; background: #ffb84d;
+    animation: bounceSoft 2.2s ease-in-out infinite;
+  }
+  .sun-face::before, .sun-face::after {
+    content: ''; position: absolute; top: 18px; width: 5px; height: 5px;
+    border-radius: 50%; background: #7a4a1a;
+  }
+  .sun-face::before { left: 14px; }
+  .sun-face::after { left: 30px; }
+  @keyframes bounceSoft { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+  .puff-cloud {
+    position: absolute; width: 40px; height: 16px;
+    background: #fff; border-radius: 20px; opacity: 0.85;
+    animation: driftAcross 9s linear infinite;
+  }
+  @keyframes driftAcross { from { transform: translateX(-60px); } to { transform: translateX(340px); } }
+
+  .cloud-char {
+    position: absolute; top: 60px; left: 50%;
+    width: 64px; height: 32px; margin-left: -32px;
+    background: #fff; border-radius: 30px;
+    z-index: 2;
+    animation: cloudSway 3s ease-in-out infinite;
+  }
+  .cloud-char::before {
+    content: ''; position: absolute; top: -14px; left: 14px;
+    width: 30px; height: 30px; background: #fff; border-radius: 50%;
+  }
+  .cloud-char .eye {
+    position: absolute; top: 10px; width: 5px; height: 5px;
+    border-radius: 50%; background: #6b7280;
+  }
+  .cloud-char .eye.l { left: 20px; }
+  .cloud-char .eye.r { left: 38px; }
+  @keyframes cloudSway { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+
+  .raindrop {
+    position: absolute; top: 56px;
+    width: 2px; height: 14px;
+    background: #6b93c7;
+    z-index: 1;
+    animation: rainFall 1s linear infinite;
+  }
+  @keyframes rainFall {
+    from { transform: translateY(0); opacity: 0; }
+    15% { opacity: 0.9; }
+    90% { opacity: 0.9; }
+    to { transform: translateY(220px); opacity: 0; }
+  }
+
+  .snowflake {
+    position: absolute; top: 56px;
+    width: 8px; height: 8px; font-size: 10px; color: #fff; text-align: center;
+    z-index: 1;
+    animation: snowFall 4s linear infinite;
+  }
+  @keyframes snowFall {
+    from { transform: translate(0, 0) rotate(0deg); opacity: 0; }
+    10% { opacity: 1; }
+    50% { transform: translate(12px, 110px) rotate(180deg); }
+    90% { opacity: 1; }
+    to { transform: translate(-6px, 220px) rotate(360deg); opacity: 0; }
+  }
+
+  /* 텍스트 콘텐츠 레이어 */
+  .content-layer {
+    position: relative; z-index: 3;
+    padding: 1.5rem 1.5rem 0.5rem;
+    text-align: center;
+  }
+  .tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+  .tab {
+    flex: 1;
+    padding: 0.5rem 0;
+    border: none; border-radius: 10px;
+    background: rgba(255,255,255,0.6);
+    font-size: 0.9rem; cursor: pointer; color: #333;
+  }
+  .tab.active { background: #333; color: #fff; font-weight: 600; }
   #icon { font-size: 5rem; }
   #result { font-size: 2rem; font-weight: 700; margin: 0.5rem 0; }
-  #detail { font-size: 1.1rem; color: #444; }
+  #detail { font-size: 1.1rem; color: #333; }
+  #humidity-wind { font-size: 0.85rem; color: #444; margin-top: 0.4rem; }
+  #comment { font-size: 0.85rem; color: #444; margin-top: 0.6rem; }
   #error { display: none; font-size: 1.2rem; margin-top: 1rem; }
   #retry-btn {
-    margin-top: 1rem;
-    padding: 0.6rem 1.2rem;
-    font-size: 1rem;
-    border: none;
-    border-radius: 8px;
-    background: #333;
-    color: white;
-    cursor: pointer;
+    margin-top: 1rem; padding: 0.6rem 1.2rem; font-size: 1rem;
+    border: none; border-radius: 8px; background: #333; color: white; cursor: pointer;
+  }
+
+  .timeline {
+    position: relative; z-index: 3;
+    text-align: center; font-size: 1.1rem; letter-spacing: 0.3rem;
+    padding: 0.75rem 0 1.25rem;
   }
 </style>
 </head>
-<body class="cloudy">
-  <div class="card">
-    <div id="icon">⏳</div>
-    <div id="result">날씨 확인 중...</div>
-    <div id="detail"></div>
-    <div id="error">
-      <p id="error-message"></p>
-      <button id="retry-btn">다시 시도</button>
+<body>
+  <div class="page">
+    <div class="app-card">
+      <div class="bg-layer">
+        <div class="scene active" id="scene-sunny">
+          <div class="puff-cloud" style="top:14px; animation-delay:0s"></div>
+          <div class="puff-cloud" style="top:50px; opacity:0.5; transform:scale(0.7); animation-delay:-4s"></div>
+          <div class="sun-face"></div>
+        </div>
+        <div class="scene" id="scene-cloudy">
+          <div class="cloud-char"><div class="eye l"></div><div class="eye r"></div></div>
+        </div>
+        <div class="scene" id="scene-rainy">
+          <div class="raindrop" style="left:15%; animation-delay:0s"></div>
+          <div class="raindrop" style="left:30%; animation-delay:0.2s"></div>
+          <div class="raindrop" style="left:45%; animation-delay:0.4s"></div>
+          <div class="raindrop" style="left:60%; animation-delay:0.1s"></div>
+          <div class="raindrop" style="left:75%; animation-delay:0.35s"></div>
+          <div class="raindrop" style="left:90%; animation-delay:0.25s"></div>
+          <div class="cloud-char"><div class="eye l"></div><div class="eye r"></div></div>
+        </div>
+        <div class="scene" id="scene-snowy">
+          <div class="snowflake" style="left:15%; animation-delay:0s">❄</div>
+          <div class="snowflake" style="left:35%; animation-delay:1s">❄</div>
+          <div class="snowflake" style="left:50%; animation-delay:0.5s">❄</div>
+          <div class="snowflake" style="left:65%; animation-delay:1.7s">❄</div>
+          <div class="snowflake" style="left:82%; animation-delay:0.8s">❄</div>
+          <div class="cloud-char"><div class="eye l"></div><div class="eye r"></div></div>
+        </div>
+      </div>
+      <div class="content-layer">
+        <div class="tabs">
+          <button id="tab-umbrella" class="tab active" type="button">☂️ 우산</button>
+          <button id="tab-parasol" class="tab" type="button">🌂 양산</button>
+        </div>
+        <div id="icon">⏳</div>
+        <div id="result">날씨 확인 중...</div>
+        <div id="detail"></div>
+        <div id="humidity-wind"></div>
+        <div id="comment"></div>
+        <div id="error">
+          <p id="error-message"></p>
+          <button id="retry-btn" type="button">다시 시도</button>
+        </div>
+      </div>
+      <div id="timeline" class="timeline"></div>
     </div>
   </div>
   <script>
     const THRESHOLD_PERCENT = 40;
     const WINDOW_START_HOUR = 6;
     const WINDOW_END_HOUR = 21;
+
+    const SCENES = ['sunny', 'cloudy', 'rainy', 'snowy'];
+    function showScene(category) {
+      SCENES.forEach((c) => {
+        document.getElementById('scene-' + c).classList.toggle('active', c === category);
+      });
+    }
 
     function getTodayWindowPrecipProbabilities(hourlyTimes, hourlyPrecipProb, startHour = WINDOW_START_HOUR, endHour = WINDOW_END_HOUR) {
       const todayStr = hourlyTimes[0].slice(0, 10);
@@ -142,14 +283,15 @@
       }
       detailEl.textContent = `오늘 ${Math.round(min)}° / ${Math.round(max)}°, 강수확률 최대 ${Math.round(maxPrecipProb)}%`;
 
-      document.body.classList.remove('sunny', 'cloudy', 'rainy', 'snowy');
-      document.body.classList.add(category);
+      showScene(category);
     }
 
     function renderError(message) {
       document.getElementById('icon').textContent = '⚠️';
       document.getElementById('result').textContent = '';
       document.getElementById('detail').textContent = '';
+      document.getElementById('humidity-wind').textContent = '';
+      document.getElementById('comment').textContent = '';
       document.getElementById('error-message').textContent = message;
       document.getElementById('error').style.display = 'block';
     }
@@ -159,6 +301,8 @@
       document.getElementById('icon').textContent = '⏳';
       document.getElementById('result').textContent = '날씨 확인 중...';
       document.getElementById('detail').textContent = '';
+      document.getElementById('humidity-wind').textContent = '';
+      document.getElementById('comment').textContent = '';
       try {
         const { lat, lon } = await getUserLocation();
         const weather = await fetchWeather(lat, lon);
